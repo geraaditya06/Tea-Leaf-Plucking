@@ -7,13 +7,6 @@
 - **Faculty:** Ravi Pratap
 - **Batch:** 13
 
-## Team Members
-| Enrollment Number | Name |
-|---|---|
-| S24CSEU1107 | Aditya Gera |
-| S24CSEU1115 | Harshit Saraswat |
-| S24CSEU1094 | Sushant Balhra |
-
 ## Objective
 Predict the quantity of tea leaves plucked by a worker in a day using machine learning regression.
 
