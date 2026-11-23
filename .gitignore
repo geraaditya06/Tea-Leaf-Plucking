@@ -19,3 +19,14 @@ mlartifacts/
 .env
 .env.*
 !.env.example
+
+# Local Python environment
+.venv312/
+
+# Processed datasets
+data/processed/
+
+# MLflow local database and artifacts
+mlflow.db
+mlruns/
+artifacts/
