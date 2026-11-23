@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pandas as pd
 import mlflow
-import mlflow.sklearn
+import mlflow.pyfunc
 
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
@@ -16,13 +16,16 @@ from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
+# =========================
+# CONFIGURATION
+# =========================
+
 ROOT = Path(__file__).resolve().parent.parent
 
 DATA_PATH = ROOT / "data" / "processed" / "train_clean.csv"
 
 TARGET = "kg_per_worker"
 
-# Exclude identifiers, date, and potentially leakage-related column
 DROP_COLUMNS = [
     "record_id",
     "date",
@@ -30,16 +33,42 @@ DROP_COLUMNS = [
 ]
 
 
+# =========================
+# MLFLOW PYFUNC WRAPPER
+# =========================
+
+class PipelineModel(mlflow.pyfunc.PythonModel):
+
+    def __init__(self, pipeline):
+        self.pipeline = pipeline
+
+    def predict(self, context, model_input, params=None):
+        return self.pipeline.predict(model_input)
+
+
+# =========================
+# LOAD DATA
+# =========================
+
 def load_data():
+
     df = pd.read_csv(DATA_PATH)
 
-    X = df.drop(columns=[TARGET] + DROP_COLUMNS, errors="ignore")
+    X = df.drop(
+        columns=[TARGET] + DROP_COLUMNS,
+        errors="ignore",
+    )
+
     y = df[TARGET]
 
     return X, y
 
 
-def build_pipeline(X, model):
+# =========================
+# PREPROCESSING
+# =========================
+
+def build_pipeline(X, estimator):
 
     numerical_features = X.select_dtypes(
         include=["number"]
@@ -50,12 +79,12 @@ def build_pipeline(X, model):
     ).columns.tolist()
 
     numerical_pipeline = Pipeline([
-        ("imputer", SimpleImputer(strategy="median"))
+        ("imputer", SimpleImputer(strategy="median")),
     ])
 
     categorical_pipeline = Pipeline([
         ("imputer", SimpleImputer(strategy="most_frequent")),
-        ("encoder", OneHotEncoder(handle_unknown="ignore"))
+        ("encoder", OneHotEncoder(handle_unknown="ignore")),
     ])
 
     preprocessor = ColumnTransformer([
@@ -65,19 +94,34 @@ def build_pipeline(X, model):
 
     pipeline = Pipeline([
         ("preprocessing", preprocessor),
-        ("model", model),
+        ("model", estimator),
     ])
 
     return pipeline
 
 
+# =========================
+# EVALUATION
+# =========================
+
 def evaluate_model(model, X_test, y_test):
 
     predictions = model.predict(X_test)
 
-    mae = mean_absolute_error(y_test, predictions)
-    rmse = mean_squared_error(y_test, predictions) ** 0.5
-    r2 = r2_score(y_test, predictions)
+    mae = mean_absolute_error(
+        y_test,
+        predictions,
+    )
+
+    rmse = mean_squared_error(
+        y_test,
+        predictions,
+    ) ** 0.5
+
+    r2 = r2_score(
+        y_test,
+        predictions,
+    )
 
     return {
         "MAE": mae,
@@ -86,13 +130,19 @@ def evaluate_model(model, X_test, y_test):
     }
 
 
+# =========================
+# MAIN TRAINING
+# =========================
+
 def main():
 
+    # Load dataset
     X, y = load_data()
 
     print("Dataset shape:", X.shape)
     print("Target:", TARGET)
 
+    # Train-test split
     X_train, X_test, y_train, y_test = train_test_split(
         X,
         y,
@@ -103,18 +153,23 @@ def main():
     print("Training rows:", len(X_train))
     print("Testing rows:", len(X_test))
 
+    # MLflow configuration
     mlflow.set_tracking_uri(
         f"sqlite:///{ROOT / 'mlflow.db'}"
     )
 
-    mlflow.set_experiment("Tea-Leaf-Plucking")
+    mlflow.set_experiment(
+        "Tea-Leaf-Plucking"
+    )
 
+    # Models
     models = {
         "RandomForest": RandomForestRegressor(
             n_estimators=200,
             random_state=42,
             n_jobs=-1,
         ),
+
         "GradientBoosting": GradientBoostingRegressor(
             n_estimators=200,
             learning_rate=0.05,
@@ -125,57 +180,90 @@ def main():
 
     results = []
 
+    # Train models
     for model_name, estimator in models.items():
 
         print(f"\nTraining {model_name}...")
 
-        pipeline = build_pipeline(X_train, estimator)
+        pipeline = build_pipeline(
+            X_train,
+            estimator,
+        )
 
-        with mlflow.start_run(run_name=model_name) as run:
+        with mlflow.start_run(
+            run_name=model_name
+        ) as run:
 
-            pipeline.fit(X_train, y_train)
+            # Train
+            pipeline.fit(
+                X_train,
+                y_train,
+            )
 
+            # Evaluate
             metrics = evaluate_model(
                 pipeline,
                 X_test,
                 y_test,
             )
 
-            mlflow.log_param("model_name", model_name)
-            mlflow.log_param("test_size", 0.2)
-            mlflow.log_param("random_state", 42)
+            # Log parameters
+            mlflow.log_params({
+                "model_name": model_name,
+                "test_size": 0.2,
+                "random_state": 42,
+                "n_estimators": 200,
+                "target": TARGET,
+            })
 
+            # Log metrics
             mlflow.log_metrics(metrics)
 
-            mlflow.sklearn.log_model(
-                sk_model=pipeline,
+            # Log model through PyFunc
+            mlflow.pyfunc.log_model(
                 name="model",
+                python_model=PipelineModel(pipeline),
             )
 
+            # Save results
             results.append({
                 "model_name": model_name,
                 "run_id": run.info.run_id,
-                "pipeline": pipeline,
-                **metrics,
+                "MAE": metrics["MAE"],
+                "RMSE": metrics["RMSE"],
+                "R2": metrics["R2"],
             })
 
             print("Metrics:", metrics)
 
+    # =========================
+    # MODEL COMPARISON
+    # =========================
+
     results_df = pd.DataFrame(results)
 
-    print("\nMODEL COMPARISON")
+    print("\n" + "=" * 50)
+    print("MODEL COMPARISON")
+    print("=" * 50)
+
     print(
         results_df[
             ["model_name", "MAE", "RMSE", "R2"]
         ].to_string(index=False)
     )
 
+    # Select best model using RMSE
     best_model = results_df.sort_values(
-        "RMSE"
+        by="RMSE",
+        ascending=True,
     ).iloc[0]
 
     print("\nBest model:", best_model["model_name"])
     print("Best RMSE:", best_model["RMSE"])
+
+    # =========================
+    # MODEL REGISTRY
+    # =========================
 
     best_run_id = best_model["run_id"]
 
@@ -186,9 +274,12 @@ def main():
         name="tea-leaf-plucking-model",
     )
 
-    print("\nModel registered successfully!")
-    print("Registered model name:", registered_model.name)
-    print("Registered model version:", registered_model.version)
+    print("\n" + "=" * 50)
+    print("MODEL REGISTRATION SUCCESSFUL")
+    print("=" * 50)
+
+    print("Registered model:", registered_model.name)
+    print("Registered version:", registered_model.version)
 
 
 if __name__ == "__main__":
