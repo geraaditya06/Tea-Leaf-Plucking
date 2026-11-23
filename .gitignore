@@ -30,3 +30,35 @@ data/processed/
 mlflow.db
 mlruns/
 artifacts/
+
+# Python environments
+.venv/
+venv/
+venv312/
+.venv312/
+
+# Environment secrets
+.env
+.env.*
+!.env.example
+
+# Local MLflow files
+mlflow.db
+mlruns/
+artifacts/
+
+# Generated datasets
+data/processed/
+data/**/processed/
+
+# DVC local files
+.dvc/cache/
+.dvc/tmp/
+.dvc/config.local
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
