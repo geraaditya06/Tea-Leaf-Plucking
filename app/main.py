@@ -16,6 +16,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 MODEL_NAME = "tea-leaf-plucking-model"
 
+MODEL_PATH = ROOT / "mlruns" / "1" / "models" / "m-d504de84954e4225a9d7659d14df5be7" / "artifacts"
+
 MLFLOW_TRACKING_URI = f"sqlite:///{ROOT / 'mlflow.db'}"
 
 
@@ -63,37 +65,17 @@ class PredictionInput(BaseModel):
 # LOAD MODEL
 # =========================
 
-model = None
-
-
 @app.on_event("startup")
 def load_model():
-
     global model
 
     try:
-
-        mlflow.set_tracking_uri(
-            MLFLOW_TRACKING_URI
-        )
-
-        model_uri = f"models:/{MODEL_NAME}/1"
-
-        logger.info("Loading MLflow model: %s", model_uri)
-
-        model = mlflow.pyfunc.load_model(
-            model_uri
-        )
-
-        logger.info("Model loaded successfully")
-
+        logger.info(f"Loading model from: {MODEL_PATH}")
+        model = mlflow.pyfunc.load_model(str(MODEL_PATH))
+        logger.info("MLflow model loaded successfully")
     except Exception as e:
-
-        logger.exception("Failed to load model")
-
-        raise RuntimeError(
-            f"Could not load MLflow model: {e}"
-        )
+        logger.exception("Failed to load MLflow model")
+        raise RuntimeError(f"Could not load MLflow model: {e}")
 
 
 # =========================
