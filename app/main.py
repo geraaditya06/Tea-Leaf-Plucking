@@ -3,6 +3,7 @@ import logging
 
 import mlflow
 import mlflow.pyfunc
+import pandas as pd
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -121,11 +122,9 @@ def predict(data: PredictionInput):
 
     try:
 
-        input_data = data.model_dump()
+        input_data = pd.DataFrame([data.model_dump()])
 
-        prediction = model.predict(
-            [input_data]
-        )
+        prediction = model.predict(input_data)
 
         predicted_value = float(prediction[0])
 
