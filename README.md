@@ -19,6 +19,24 @@ Predict the quantity of tea leaves plucked by a worker in a day using machine le
 
 Training datasets are versioned using DVC.
 
+### Dataset Features
+The dataset contains information about tea workers, weather conditions,
+terrain, tea bushes, and working conditions.
+
+Key features include:
+
+- Worker experience
+- Weekly rainfall
+- Slope of the terrain
+- Temperature
+- Bush age
+- Hours worked
+- Tea flush
+- Garden section
+
+The model predicts `kg_per_worker`, representing the quantity of tea
+leaves plucked per worker.
+
 ## Project Pipeline
 1. Data versioning with DVC
 2. Data quality investigation and cleaning
