@@ -1,0 +1,69 @@
+
+group_id: "G129"
+problem_id: "MP241"
+
+data_issues:
+  leaking_column:
+    present: true
+    column: "kg_weighed_at_factory"
+
+  unit_mixup:
+    present: false
+    column: null
+    group_value: null
+    factor: null
+
+  sentinel_value:
+    present: true
+    column: "slope_deg"
+    value: -1
+    count: 48
+
+  duplicate_rows:
+    present: true
+    count: 31
+
+  stuck_sensor:
+    present: false
+    column: null
+    start_date: null
+    end_date: null
+
+  target_typos:
+    present: false
+    count: null
+
+  spelling_variants:
+    present: true
+    column: "flush"
+    true_levels: 3
+
+tracking:
+  experiment_name: "Tea-Leaf-Plucking"
+  best_run_id: "1bdc2246bca44fbaa2fcec6a855b6a86"
+  registered_model_name: "tea-leaf-plucking-model"
+  champion_version: 2
+
+monitoring:
+  psi:
+    worker_exp_yr: 0.033082
+    rain_mm_week: 0.042988
+    slope_deg: 0.000000
+    temp_c: 0.048023
+    bush_age_yr: 0.051401
+    hours_worked: 5.297109
+
+  most_drifted_feature: "hours_worked"
+
+  mae_by_group:
+    'Upper Garden': 5.136829
+    'Lower Garden': 6.117549
+    'River Side': 20.680876
+
+  worst_served_group: "River Side"
+
+  mae_v1_on_check: 11.799242
+  mae_v2_on_check: 2.027380
+
+  decision: "PROMOTE_V2"
+

@@ -42,19 +42,27 @@ def clean_dataset(df: pd.DataFrame) -> pd.DataFrame:
                 .str.lower()
             )
 
-    # 5. Treat invalid negative slope values as missing
+    # 5. Standardize known flush abbreviations
+    if "flush" in df.columns:
+        flush_mapping = {
+            "fir.": "first",
+            "mon.": "monsoon",
+            "sec.": "second",
+        }
+
+        df["flush"] = df["flush"].replace(flush_mapping)
+
+    # 6. Treat invalid negative slope values as missing
     if "slope_deg" in df.columns:
         df.loc[df["slope_deg"] < 0, "slope_deg"] = pd.NA
 
-    # 6. Remove rows with missing target values
+    # 7. Remove rows with missing target values
     if TARGET in df.columns:
         df = df.dropna(subset=[TARGET])
 
-    # 7. Reset index
+    # 8. Reset index
     df = df.reset_index(drop=True)
-
     return df
-
 
 def main():
     PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
