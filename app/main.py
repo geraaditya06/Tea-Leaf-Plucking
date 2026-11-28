@@ -55,8 +55,8 @@ class PredictionInput(BaseModel):
     rain_mm_week: float = Field(ge=0)
     slope_deg: float = Field(ge=0, le=90)
     temp_c: float
-    bush_age_yr: float = Field(ge=0)
-    hours_worked: float = Field(gt=0, le=24)
+    bush_age_yr: float = Field(ge=1.5)
+    hours_worked: float = Field(gt=0, le=15)
 
     flush: str
     section: str
@@ -101,7 +101,7 @@ def home():
 def health_check():
 
     return {
-        "status": "healthy",
+        "status": "ok",
         "model_loaded": model is not None,
     }
 

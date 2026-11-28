@@ -1,14 +1,20 @@
+
 apiVersion: v1
 kind: Service
+
 metadata:
-  name: tea-leaf-plucking
+  name: mp241-svc
   labels:
-    app: tea-leaf-plucking
+    app: mp241-api
+
 spec:
   selector:
-    app: tea-leaf-plucking
+    app: mp241-api
+
   ports:
     - protocol: TCP
-      port: 8000
+      port: 80
       targetPort: 8000
+
   type: ClusterIP
+

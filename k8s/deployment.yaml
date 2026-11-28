@@ -1,13 +1,14 @@
+
 apiVersion: apps/v1
 kind: Deployment
 
 metadata:
-  name: tea-leaf-plucking
+  name: mp241-api
   labels:
-    app: tea-leaf-plucking
+    app: mp241-api
 
 spec:
-  replicas: 1
+  replicas: 2
 
   strategy:
     type: RollingUpdate
@@ -17,17 +18,17 @@ spec:
 
   selector:
     matchLabels:
-      app: tea-leaf-plucking
+      app: mp241-api
 
   template:
     metadata:
       labels:
-        app: tea-leaf-plucking
+        app: mp241-api
 
     spec:
       containers:
-        - name: tea-leaf-api
-          image: tea-leaf-plucking-api:latest
+        - name: mp241-api
+          image: mp241-api:1.0
           imagePullPolicy: Never
 
           ports:
@@ -53,6 +54,7 @@ spec:
             httpGet:
               path: /health
               port: 8000
+            initialDelaySeconds: 30
             periodSeconds: 10
             timeoutSeconds: 2
             failureThreshold: 3
@@ -64,3 +66,4 @@ spec:
             limits:
               cpu: 500m
               memory: 768Mi
+
